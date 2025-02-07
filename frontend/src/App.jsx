@@ -1,8 +1,40 @@
 import React from "react";
 import FloatingShape from "./components/FloatingShape";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUp";
+import { useAuthStore } from "./store/authStore";
+import DashboardPage from "./pages/DashboardPage";
+import EmailVerificationPage from "./pages/EmailVerificationPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage ";
+import ResetPasswordPage from "./pages/ResetPasswordPage ";
+
+
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to='/login' replace />;
+  }
+
+  if (!user.isVerified) {
+    return <Navigate to='/verify-email' replace />;
+  }
+
+  return children;
+};
+
+
+const RedirectAuthenticatedUser = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (isAuthenticated && user.isVerified) {
+    return <Navigate to='/' replace />;
+  }
+
+  return children;
+};
+
 
 const App = () => {
   return (
@@ -32,9 +64,53 @@ const App = () => {
       </div>
 
       <Routes>
-        <Route path="/" element="Home" />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
+        {/* <Route path="/" element="Home" /> */}
+
+        <Route
+          path='/'
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+
+        />
+        <Route
+          path='/signup'
+          element={
+            <RedirectAuthenticatedUser>
+              <SignUpPage />
+            </RedirectAuthenticatedUser>
+          }
+        />
+        <Route
+          path='/login'
+          element={
+            <RedirectAuthenticatedUser>
+              <LoginPage />
+            </RedirectAuthenticatedUser>
+          }
+        />
+        <Route path='/verify-email' element={<EmailVerificationPage />} />
+        <Route
+          path='/forgot-password'
+          element={
+            <RedirectAuthenticatedUser>
+              <ForgotPasswordPage />
+            </RedirectAuthenticatedUser>
+          }
+        />
+
+        <Route
+          path='/reset-password/:token'
+          element={
+            <RedirectAuthenticatedUser>
+              <ResetPasswordPage />
+            </RedirectAuthenticatedUser>
+          }
+        />
+        {/* catch all routes */}
+        <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
     </div>
   );
